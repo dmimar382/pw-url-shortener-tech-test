@@ -32,15 +32,12 @@ class ShortenRequest(BaseModel):
 
 @app.get("/r/{short_url}")
 async def resolve_url(short_url: str):
-    try:
-        original_url = await url_shortener.resolve_url(short_url)
-        if original_url:
-            return RedirectResponse(url=original_url)
-        else:
-            raise HTTPException(status_code=404, detail="Short URL not found")
-    except Exception as e:
-        logging.error(f"Error resolving URL: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to resolve the URL")
+    original_url = await url_shortener.resolve_url(short_url)
+    if original_url:
+        return RedirectResponse(url=original_url)
+    else:
+        raise HTTPException(status_code=404, detail="Short URL not found")
+
 
 
 @app.post("/url/shorten")
