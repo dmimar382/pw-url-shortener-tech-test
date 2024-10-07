@@ -1,80 +1,61 @@
-# URL Shortener Take-Home Project
-Welcome to the Pocket Worlds URL Shortener Take-Home Project! In this repository, we'd like you to demonstrate your
-engineering skills by creating a small Python project that implements a URL Shortener web service.
-
-This project will serve as the primary jumping off point for our technical interviews. We expect you to spend a 
-couple of hours building an MVP that meets the requirements in the Product Description. You are free to implement 
-your solution and modify the provided template in the way that makes the most sense to you, but make sure to 
-update the README accordingly so that it's clear how to run and test your project. During the interviews, you will 
-be asked to demo your solution and discuss the reasoning behind your implementation decisions and their trade-offs. 
-Be prepared to share your screen for live coding and problem solving with your interviewers based on this discussion.
-
-## Project Description
-Using the provided Python project template, your task is to implement a URL Shortener web service that exposes
-the following API endpoints:
+## Project Overview
+This project implements a URL Shortener web service that allows users to shorten URLs and later resolve them using a shortened version. The service exposes two main API endpoints:
 
 * POST `/url/shorten`: accepts a URL to shorten (e.g. https://www.google.com) and returns a short URL that 
   can be resolved at a later time (e.g. http://localhost:8000/r/abc)
 * GET `r/<short_url>`: resolve the given short URL (e.g. http://localhost:8000/r/abc) to its original URL
   (e.g. https://www.google.com). If the short URL is unknown, an HTTP 404 response is returned.
 
-Your solution must support running the URL shortener service with multiple workers.
+The service is designed to run with multiple workers, ensuring that you can shorten a URL on one instance and resolve it on another.
 
-For example, it should be possible to start two instances of the service, make a request to shorten a URL
-to one instance, and be able to resolve that shortened URL by sending subsequent requests to the second instance. 
+## Design Decisions: Using a Library for URL Shortening Logic
+
+### Why I Refactored the Logic into a Library
+
+To improve **reusability** and **separation of concerns**, I extracted the core URL shortening logic into a dedicated Python library (`url_shortener.py`). This allows for the business logic to be cleanly decoupled from the FastAPI web service itself, making the codebase easier to maintain, extend, and test.
+
+Key reasons for using a library-based architecture:
+
+1. **Separation of Concerns**: The URL shortening logic is isolated from the API layer. This separation allows for the business logic to be tested and reused independently from the API infrastructure.
+2. **Reusability**: The URL shortening library can be used in other contexts (e.g. another service) without needing to rewrite the core logic.
+3. **Scalability**: By decoupling the logic, it can be invoked in different ways (e.g., via gRPC or other HTTP-based services), making it scalable for future enhancements.
+4. **Easier Testing**: The URL shortening logic can be unit tested separately, making it easier to write comprehensive tests.
+
+### How the Library is Invoked in the API
+
+The `URLShortener` class, implemented in `lib/url_shortener.py`, encapsulates the core functionality, including generating and resolving shortened URLs. This class is instantiated in the FastAPI application and then used to handle incoming requests.
+
+Here is how the library is used:
+
+1. **Library Structure**: 
+   - The URL shortening logic is implemented in the `URLShortener` class in the `lib/url_shortener.py` file.
+   - The class handles generating Base62-encoded short URLs and storing/retrieving data from MongoDB and Redis.
+
+2. **Integration with FastAPI**:
+   - In `server.py`, the FastAPI application initializes the `URLShortener` class. Redis and MongoDB clients are passed into this class, ensuring the service can cache URLs and persist them.
+   - The API routes (`/url/shorten` and `/r/{short_url}`) delegate the shortening and resolving tasks to the `URLShortener` library.
+
 
 ## Getting Started
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/dmimar382/pw-url-shortener-tech-test.git
+   cd pw-url-shortener-tech-test
+   ```
 
-To begin the project, clone this repository to your local machine:
+2. **Switch to the Feature Branch**:
+   Switch to the branch where the URL shortening logic has been implemented as a library:
+   ```bash
+   git checkout feature/url-shortener-library
+   ```
 
-```commandline
-git clone https://github.com/pocketzworld/url-shortener-tech-test.git
-```
+3. **Run the Service with Docker**:
+   Use the following command to build and run the service in a Docker container:
+   ```bash
+   make up
+   ```
 
-This repository contains a skeleton of the URL Shortener web service written in Python 3.11
-using the [FastAPI](https://fastapi.tiangolo.com/) framework.
+4. **Access the Service**:
+   The service will be running on `http://localhost:8000`. You can access the API documentation via [Swagger UI](http://localhost:8000/docs).
 
-The API endpoints can be found in `server.py`.
-
-A Makefile and Dockerfile are also included for your convenience to run and test the web service.
-
-Note that you are not required to use Docker or the provided FastAPI skeleton for your implementation, if you are 
-more comfortable with other tools or frameworks. Your solution must still meet the requirements described in the 
-Project Description. The following sections will assume that you are using Docker and FastAPI, but feel free to 
-update the project and make sure to modify the README to reflect how your implementation should be run and tested. 
-
-### Running the service
-
-To run the web service in interactive mode, use the following command:
-```commandline
-make run
-```
-
-This command will build a new Docker image (`pw/url-shortener:latest`) and start a container
-instance in interactive mode.
-
-By default, the web service will run on port 8000.
-
-### Testing
-
-Swagger UI is available as part of the FastAPI framework that can be used to inspect and test
-the API endpoints of the URL shortener. To access it, start run the web service and go to http://localhost:8000/docs
-
-## Submission Guidelines
-When you have completed the project, please follow these guidelines for submission:
-
-1. Commit and push your code to your GitHub repository.
-2. Update this README with any additional instructions, notes, or explanations regarding your implementation, if necessary.
-3. Provide clear instructions on how to run and test your project.
-4. Share the repository URL with the hiring team or interviewer.
-
-## Additional Information
-Feel free to be creative in how you approach this project. Your solution will be evaluated based on code quality,
-efficiency, and how well it meets the specified requirements. Be prepared to discuss the reasoning behind your
-implementation decisions and their trade-offs.
-
-Remember that this project is the basis for the technical interviews, which do include live coding. We will not
-ask you to solve an algorithm, but you will be expected to demo your solution and explain your thought process.
-
-Good luck, and we look forward to seeing your URL Shortener project! If you have any questions or need
-clarifications, please reach out to us.
+---
