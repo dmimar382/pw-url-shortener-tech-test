@@ -1,0 +1,42 @@
+services:
+  http-api:
+    build:
+      context: ${LOCAL_REPO_ROOT}
+      dockerfile: ./services/http-api/Dockerfile  
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - url-shortener
+    environment:
+      - URL_SHORTENER_SERVICE=${URL_SHORTENER_SERVICE}
+
+  url-shortener:
+    build:
+      context: ${LOCAL_REPO_ROOT}
+      dockerfile: ./services/url-shortener/Dockerfile   
+    ports:
+      - "8001:8001"
+    depends_on:
+      - redis
+      - mongo
+    environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - MONGO_URL=${MONGO_URL}
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:
