@@ -1,74 +1,60 @@
-import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
+import redis.asyncio as redis
+from motor.motor_asyncio import AsyncIOMotorClient
+import logging  
 from config.config import settings
-import requests
-
-# Set up logging configuration
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
+from lib.url_shortener import URLShortener
 
 app = FastAPI()
-BASE_URL: str = "http://localhost:8000"
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s" 
+)
+
+# Connect to Redis
+redis_client = redis.from_url(f"redis://{settings.redis_host}:{settings.redis_port}", decode_responses=True)
+
+# Connect to MongoDB
+mongo_client = AsyncIOMotorClient(settings.mongo_url)
+db = mongo_client.url_shortener
+url_collection = db.urls
+
+# Initialize the URLShortener library
+url_shortener = URLShortener(mongo_collection=url_collection, redis_client=redis_client)
 
 class ShortenRequest(BaseModel):
     url: str
-
-
-@app.post("/url/shorten")
-async def url_shorten(request: ShortenRequest):
-    """
-    Forward the request to the URL shortener service to generate a shortened URL.
-    """
-    logging.info("Received request to shorten URL: %s", request.url)
-    
-    try:
-        # Forward the request to the url-shortener service
-        response = requests.post(f"{settings.url_shortener_service}/url/shorten", json=request.dict())
-        logging.info("Forwarded request to url-shortener service: %s", response.url)
-        response.raise_for_status()
-
-        shortened_url = response.json().get("short_url")
-        logging.info("Shortened URL received: %s", shortened_url)
-
-        full_shortened_url = f"{BASE_URL}/r/{shortened_url}"
-        
-        return {"short_url": full_shortened_url}
-    except requests.exceptions.RequestException as e:
-        logging.error("Error shortening the URL: %s", e)
-        raise HTTPException(status_code=500, detail="Failed to shorten the URL") from e
+    expiration: int = None
 
 
 @app.get("/r/{short_url}")
-async def url_resolve(short_url: str):
-    """
-    Forward the request to the URL shortener service to resolve the shortened URL.
-    """
-    logging.info("Received request to resolve short URL: %s", short_url)
-    
+async def resolve_url(short_url: str):
     try:
-        # Forward the request to the url-shortener service
-        response = requests.get(f"{settings.url_shortener_service}/r/{short_url}")
-        logging.info("Forwarded request to url-shortener service for resolving: %s", response.url)
-        response.raise_for_status()
-        
-        original_url = response.json().get('original_url')
+        original_url = await url_shortener.resolve_url(short_url)
         if original_url:
-            logging.info("Resolved short URL to original URL: %s", original_url)
             return RedirectResponse(url=original_url)
         else:
-            logging.error("Failed to retrieve original URL from url-shortener service")
-            raise HTTPException(status_code=500, detail="Failed to get original URL from the shortener service")
-    except requests.exceptions.RequestException as e:
-        logging.error("Error resolving the short URL: %s", e)
-        raise HTTPException(status_code=404, detail="Short URL not found") from e
+            raise HTTPException(status_code=404, detail="Short URL not found")
+    except Exception as e:
+        logging.error(f"Error resolving URL: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to resolve the URL")
+
+
+@app.post("/url/shorten")
+async def shorten_url(request: ShortenRequest):
+    try:
+        short_url = await url_shortener.shorten_url(request.url, request.expiration)
+        full_shortened_url = f"{settings.base_url}/r/{short_url}"
+        return {"short_url": full_shortened_url}
+    except Exception as e:
+        logging.error(f"Error shortening URL: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to shorten the URL")
 
 
 @app.get("/")
 async def index():
-    logging.info("Health check on the URL shortener API")
-    return "Your API service is running!"
+    logging.info("Health check on the URL shortener Service")
+    return "Your Service is running!"

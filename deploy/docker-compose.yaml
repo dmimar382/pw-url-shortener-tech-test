@@ -8,23 +8,13 @@ services:
     env_file:
       - .env
     depends_on:
-      - url-shortener
-    environment:
-      - URL_SHORTENER_SERVICE=${URL_SHORTENER_SERVICE}
-
-  url-shortener:
-    build:
-      context: ${LOCAL_REPO_ROOT}
-      dockerfile: ./services/url-shortener/Dockerfile   
-    ports:
-      - "8001:8001"
-    depends_on:
       - redis
       - mongo
     environment:
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
       - MONGO_URL=${MONGO_URL}
+      - BASE_URL=${BASE_URL}
 
   redis:
     image: redis:alpine
