@@ -43,10 +43,10 @@ Here is how the library is used:
    cd pw-url-shortener-tech-test
    ```
 
-2. **Switch to the Feature Branch**:
-   Switch to the branch where the URL shortening logic has been implemented as a library:
+2. **Set Up Environment Variables**:
+   Copy the contents of the .env.example file located in the deploy folder into a new .env file in the same directory.
    ```bash
-   git checkout feature/url-shortener-library
+   cp deploy/.env.example deploy/.env
    ```
 
 3. **Run the Service with Docker**:
