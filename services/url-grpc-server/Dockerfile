@@ -8,10 +8,12 @@ COPY ../../requirements.txt /app
 RUN pip install --no-cache -r /app/requirements.txt
 
 # Copy the app source code
-COPY ./services/url-shortener/ /app
+COPY ./services/url-grpc-server/ /app
+COPY ./libs/protocols /app/libs/protocols
+COPY ./libs /app/libs
 
-# Expose the port that FastAPI runs on
-EXPOSE 8001
+ENV PYTHONPATH=/app/libs/protocols
 
-# Command to run FastAPI
-ENTRYPOINT ["uvicorn", "--host", "0.0.0.0", "--port", "8001", "url_shortener_service:app"]
+EXPOSE 50051
+
+CMD ["python", "server.py"]

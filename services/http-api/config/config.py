@@ -1,7 +1,8 @@
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    url_shortener_service: str
+    grpc_host: str
+    grpc_port: int
  
 
 # Initialize the settings object

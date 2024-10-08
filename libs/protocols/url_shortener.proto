@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package urlshortener;
+
+service URLShortener {
+    rpc Shorten(ShortenRequest) returns (ShortenResponse);
+    rpc Resolve(ResolveRequest) returns (ResolveResponse);
+}
+
+message ShortenRequest {
+    string original_url = 1;
+    int32 expiration = 2;  // Optional expiration time in seconds
+}
+
+message ShortenResponse {
+    string short_url = 1;
+}
+
+message ResolveRequest {
+    string short_url = 1;
+}
+
+message ResolveResponse {
+    string original_url = 1;
+}

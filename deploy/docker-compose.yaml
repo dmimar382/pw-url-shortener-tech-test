@@ -10,14 +10,16 @@ services:
     depends_on:
       - url-shortener
     environment:
-      - URL_SHORTENER_SERVICE=${URL_SHORTENER_SERVICE}
+      - GRPC_HOST=${GRPC_HOST}
+      - GRPC_PORT=${GRPC_PORT}
+
 
   url-shortener:
     build:
       context: ${LOCAL_REPO_ROOT}
-      dockerfile: ./services/url-shortener/Dockerfile   
+      dockerfile: ./services/url-grpc-server/Dockerfile   
     ports:
-      - "8001:8001"
+      - "50051:50051"
     depends_on:
       - redis
       - mongo
@@ -25,6 +27,9 @@ services:
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
       - MONGO_URL=${MONGO_URL}
+      - GRPC_HOST=${GRPC_HOST}
+      - GRPC_PORT=${GRPC_PORT}
+
 
   redis:
     image: redis:alpine

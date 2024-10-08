@@ -1,8 +1,10 @@
 fastapi==0.103.1
-pydantic==2.3.0
+pydantic>=2.3.0
 uvicorn[standard]==0.23.2
-redis
-pymongo
-pydantic-settings
-requests
-motor
+redis==5.1.1
+pymongo<=4.10.1
+pydantic-settings==2.5.2
+requests==2.32.3
+motor==3.6.0
+grpcio
+protobuf
