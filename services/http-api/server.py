@@ -5,7 +5,7 @@ import redis.asyncio as redis
 from motor.motor_asyncio import AsyncIOMotorClient
 import logging  
 from config.config import settings
-from lib.url_shortener import URLShortener
+from libs.url_shortener import URLShortener
 
 app = FastAPI()
 
